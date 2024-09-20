@@ -50,7 +50,7 @@ class Consumer {
 
             System.out.println("Consuming Item ...");
             
-            if(Q.isEmpty()) {
+            while(Q.isEmpty()) { //to avoid spurius wakeups
                 System.out.println("Waiting for Producer...");
                 condition.await();
             }
@@ -94,7 +94,7 @@ public class ConsumerProducer {
                 consumer.consume();
 
                 try {
-                    Thread.sleep(1000); 
+                    Thread.sleep(100); 
                 } catch (Exception e) {
                     System.out.println(e.getMessage());
                 }
