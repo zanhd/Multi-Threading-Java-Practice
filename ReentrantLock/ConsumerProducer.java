@@ -3,14 +3,17 @@ package ReentrantLock;
 import java.util.LinkedList;
 import java.util.Queue;
 import java.util.concurrent.locks.ReentrantLock;
+import java.util.concurrent.locks.Condition;
 
 class Producer {
     private Queue<Integer> Q;
     private ReentrantLock lock;
+    private Condition condition;
 
-    Producer(Queue<Integer> Q, ReentrantLock lock) {
+    Producer(Queue<Integer> Q, ReentrantLock lock, Condition condition) {
         this.Q = Q;
         this.lock = lock;
+        this.condition = condition;
     }
 
     void produce(int x) {
@@ -20,6 +23,8 @@ class Producer {
             System.out.println("Producing Item[" + x + "] ...");
             Q.add(x);
             System.out.println("Produced Item[" + x + "] SUCCESSFULLY");
+
+            condition.signal();
         } catch (Exception e) {
             System.out.println(e.getMessage());
         } finally {
@@ -31,10 +36,12 @@ class Producer {
 class Consumer {
     private Queue<Integer> Q;
     private ReentrantLock lock;
+    private Condition condition;
 
-    Consumer(Queue<Integer> Q, ReentrantLock lock) {
+    Consumer(Queue<Integer> Q, ReentrantLock lock, Condition condition) {
         this.Q = Q;
         this.lock = lock;
+        this.condition = condition;
     }
 
     void consume() {
@@ -42,6 +49,12 @@ class Consumer {
             lock.lock();
 
             System.out.println("Consuming Item ...");
+            
+            if(Q.isEmpty()) {
+                System.out.println("Waiting for Producer...");
+                condition.await();
+            }
+
             int x = Q.poll();
             System.out.println("Consumed Item[" + x + "] SUCCESSFULLY");
         } catch(Exception e) {
@@ -57,9 +70,10 @@ public class ConsumerProducer {
     public static void main(String[] args) {
         Queue<Integer> Q  = new LinkedList<>();
         ReentrantLock lock = new ReentrantLock();
+        Condition condition = lock.newCondition();
 
-        Producer producer = new Producer(Q, lock);
-        Consumer consumer = new Consumer(Q, lock);
+        Producer producer = new Producer(Q, lock, condition);
+        Consumer consumer = new Consumer(Q, lock, condition);
         
         final int n = 10;
 
